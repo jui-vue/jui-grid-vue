@@ -1,0 +1,24 @@
+// jui-grid-vue base stylesheet
+// Ported from jui-grid's src/styles (table.js scope only, xtable/dropdown excluded)
+// Everything is scoped under .jui-grid-vue-root, mirroring the original ".jui" wrapper convention.
+//
+// Theming: structural rules (table.less) are theme-independent and compiled once.
+// Color rules (table.theme.less) are compiled twice, once per theme's variable set,
+// each nested under its own class so switching themes is just a class swap at runtime -
+// no separate stylesheet load needed.
+
+@import "base/mixins.less";
+
+.jui-grid-vue-root {
+  @import "table.less";
+
+  &.theme-classic {
+    @import "theme/classic.less";
+    @import (multiple) "table.theme.less";
+  }
+
+  &.theme-dark {
+    @import "theme/dark.less";
+    @import (multiple) "table.theme.less";
+  }
+}

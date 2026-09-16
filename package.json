@@ -1,0 +1,57 @@
+{
+  "name": "jui-grid-vue",
+  "private": true,
+  "version": "0.1.0",
+  "description": "A Vue 3 data grid: sortable, resizable, editable, tree rows and virtual scrolling. A from-scratch Vue port of jui-grid's table.js and xtable.js.",
+  "type": "module",
+  "license": "MIT",
+  "main": "./dist-lib/jui-grid-vue.cjs.js",
+  "module": "./dist-lib/jui-grid-vue.es.js",
+  "types": "./dist-lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist-lib/index.d.ts",
+      "import": "./dist-lib/jui-grid-vue.es.js",
+      "require": "./dist-lib/jui-grid-vue.cjs.js"
+    },
+    "./style.css": "./dist-lib/style.css"
+  },
+  "files": [
+    "dist-lib"
+  ],
+  "sideEffects": [
+    "**/*.css",
+    "**/*.less"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "build:lib": "vue-tsc -p tsconfig.lib.json --noEmit && vite build -c vite.lib.config.ts"
+  },
+  "peerDependencies": {
+    "vue": "^3.4.0"
+  },
+  "dependencies": {
+    "jui-ui-vue": "file:../jui-ui-vue/vue"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "@vitejs/plugin-vue": "^6.0.8",
+    "@vitest/coverage-v8": "^5.0.1",
+    "@vue/test-utils": "^2.5.0",
+    "@vue/tsconfig": "^0.9.1",
+    "jsdom": "^30.0.1",
+    "less": "^4.9.1",
+    "playwright": "^1.63.0",
+    "typescript": "~6.0.2",
+    "vite": "^8.3.0",
+    "vite-plugin-dts": "^5.1.0",
+    "vitest": "^5.0.1",
+    "vue": "^3.5.42",
+    "vue-tsc": "^3.3.11"
+  }
+}
