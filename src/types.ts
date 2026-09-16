@@ -10,6 +10,8 @@ export interface GridColumn {
   resizable?: boolean
   editable?: boolean
   align?: 'left' | 'center' | 'right'
+  /** Initial show/hide state when a column-visibility menu is used. Defaults to true. */
+  visible?: boolean
 }
 
 export interface GridRow<T = Record<string, any>> {

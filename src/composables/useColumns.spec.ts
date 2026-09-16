@@ -80,6 +80,16 @@ describe('useColumns', () => {
     scope.stop()
   })
 
+  it('honors an initial visible:false on a column (e.g. a colshow subset)', () => {
+    const scope = effectScope()
+    scope.run(() => {
+      const columns = ref<GridColumn[]>([{ key: 'a' }, { key: 'b', visible: false }, { key: 'c' }])
+      const { visibleColumns } = useColumns(columns)
+      expect(visibleColumns.value.map((c) => c.key)).toEqual(['a', 'c'])
+    })
+    scope.stop()
+  })
+
   it('setColumnWidth updates a column width', () => {
     const scope = effectScope()
     scope.run(() => {

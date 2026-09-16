@@ -79,6 +79,7 @@ function toPlainColumns(): GridColumn[] {
     resizable: c.resizable,
     editable: c.editable,
     align: c.align,
+    visible: c.visible,
   }))
 }
 
@@ -88,7 +89,7 @@ const { filteredRows, setFilter, clearFilter, hasFilter } = useFilter(rowsRef)
 
 const { criteria: sortCriteria, sortedRows, toggleSort, orderOf, priorityOf } = useMultiSort(filteredRows, (c) => emit('sort', c))
 
-const { flatRows, toggle: toggleTree } = useTreeRows(sortedRows)
+const { flatRows, toggle: toggleTree, open: openTreeRow, fold: foldTreeRow, openAll, foldAll } = useTreeRows(sortedRows)
 
 const totalRowCount = computed(() => flatRows.value.length)
 
@@ -234,6 +235,11 @@ function goToPage(page: number) {
 }
 
 defineExpose({
+  open: openTreeRow,
+  fold: foldTreeRow,
+  toggle: toggleTree,
+  openAll,
+  foldAll,
   uncheckAll,
   getCsv,
   exportCsv,

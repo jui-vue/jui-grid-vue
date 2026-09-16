@@ -10,7 +10,7 @@ interface ColumnState extends GridColumn {
  * Menu UI for toggling visibility is out of scope here (see plan) - only state + events.
  */
 export function useColumns(columns: Ref<GridColumn[]>, onVisibilityChange?: (col: GridColumn) => void) {
-  const state = reactive<ColumnState[]>(columns.value.map((c) => ({ ...c, visible: true })))
+  const state = reactive<ColumnState[]>(columns.value.map((c) => ({ ...c, visible: c.visible ?? true })))
 
   watch(columns, (next) => {
     state.splice(
@@ -18,7 +18,7 @@ export function useColumns(columns: Ref<GridColumn[]>, onVisibilityChange?: (col
       state.length,
       ...next.map((c) => {
         const existing = state.find((s) => s.key === c.key)
-        return { ...c, visible: existing ? existing.visible : true }
+        return { ...c, visible: existing ? existing.visible : (c.visible ?? true) }
       }),
     )
   })

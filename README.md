@@ -17,6 +17,13 @@ npm run build      # typecheck + build the demo app
 npm run build:lib  # typecheck + build the publishable package into dist-lib/
 ```
 
+The demo app (`src/App.vue` + `src/router.ts`) is a small vue-router shell with one page per
+[jui-grid `examples/*.html`](../jui-grid/examples) scenario, under `src/pages/` — `/table`,
+`/table-tree`, `/xtable` (500k-row virtual scroll), `/xtable-expand`, `/xtable-paging`,
+`/xtable-tree` (500-level deep chain), `/xtable-vscroll` (100k rows + nested append), and
+`/xtable-test` (documented as a simplification: the original's grouped/multi-row header isn't
+something this library supports).
+
 ## Usage
 
 ```vue
@@ -60,6 +67,7 @@ interface GridColumn {
   resizable?: boolean  // opt-out when the grid-level `resizable` prop is on
   editable?: boolean   // opt-in: only true columns become editable
   align?: 'left' | 'center' | 'right'
+  visible?: boolean    // initial show/hide state for the column menu, default true
 }
 
 interface GridRow<T = Record<string, any>> {
@@ -75,7 +83,7 @@ Both components accept per-column scoped slots (`#cell-<key>`, `#header-<key>`),
 
 ### Imperative API
 
-Both components expose methods via a template ref: `uncheckAll()`, `getCsv()`, `exportCsv(filename)`, `select(id)`, `hideExpand()`. `VirtualGrid` additionally exposes `setFilter(predicate)`, `clearFilter()`, `showLoading(delay?)`, `hideLoading()`, `scrollToIndex(i)`, `goToPage(n)`.
+Both components expose methods via a template ref: `open(id)`, `fold(id)`, `toggle(id)` (tree rows), `openAll()`, `foldAll()`, `uncheckAll()`, `getCsv()`, `exportCsv(filename)`, `select(id)`, `hideExpand()`. `VirtualGrid` additionally exposes `setFilter(predicate)`, `clearFilter()`, `showLoading(delay?)`, `hideLoading()`, `scrollToIndex(i)`, `goToPage(n)`.
 
 ## Composables
 

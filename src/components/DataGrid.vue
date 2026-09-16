@@ -69,6 +69,7 @@ function toPlainColumns(): GridColumn[] {
     resizable: c.resizable,
     editable: c.editable,
     align: c.align,
+    visible: c.visible,
   }))
 }
 
@@ -77,7 +78,7 @@ const { state: columnState, visibleColumns, toggleColumn } = useColumns(columnsR
 const { state: sortState, sortedRows, toggleSort } = useSort(rowsRef, (s) => emit('sort', s))
 
 const sortedForTree = computed(() => sortedRows.value)
-const { toggle: toggleTree, openAll, foldAll, flatRows } = useTreeRows(sortedForTree)
+const { toggle: toggleTree, open: openTreeRow, fold: foldTreeRow, openAll, foldAll, flatRows } = useTreeRows(sortedForTree)
 
 const { select, isSelected, isChecked, toggleCheck, uncheckAll, checkedIds } = useRowSelection()
 
@@ -204,6 +205,9 @@ function exportCsv(filename = 'table.csv') {
 }
 
 defineExpose({
+  open: openTreeRow,
+  fold: foldTreeRow,
+  toggle: toggleTree,
   openAll,
   foldAll,
   uncheckAll,
