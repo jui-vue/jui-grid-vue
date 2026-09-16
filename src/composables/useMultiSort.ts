@@ -11,8 +11,8 @@ export interface SortCriterion {
  * Multi-column sort (xtable's `msort`): plain click replaces the sort with a single
  * key, shift-click adds/cycles/removes an additional key while keeping priority order.
  */
-export function useMultiSort(rows: Ref<GridRow[]>, onSort?: (criteria: SortCriterion[]) => void) {
-  const criteria = reactive<SortCriterion[]>([])
+export function useMultiSort(rows: Ref<GridRow[]>, onSort?: (criteria: SortCriterion[]) => void, initial?: SortCriterion[]) {
+  const criteria = reactive<SortCriterion[]>(initial ? [...initial] : [])
 
   const sortedRows = computed(() => {
     if (criteria.length === 0) return rows.value

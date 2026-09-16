@@ -21,7 +21,9 @@ The demo app (`src/App.vue` + `src/router.ts`) is a small vue-router shell with 
 [jui-grid `examples/*.html`](../jui-grid/examples) scenario, under `src/pages/` — `/table`,
 `/table-tree`, `/xtable` (500k-row virtual scroll), `/xtable-expand`, `/xtable-paging`,
 `/xtable-tree` (500-level deep chain), `/xtable-vscroll` (100k rows + nested append), and
-`/xtable-test` (grouped/multi-row column headers).
+`/xtable-test` (grouped/multi-row column headers), and `/api-audit` (every method/event
+listed below, exercised against [api.jui.io/v2](http://api.jui.io/v2/#!/api/grid.table)'s
+`grid.table`/`grid.xtable` docs).
 
 ## Usage
 
@@ -53,6 +55,15 @@ const rows = reactive<GridRow[]>([
 
 ```vue
 <VirtualGrid :columns="columns" :rows="hugeRowArray" mode="virtual" :row-height="28" :height="400" sortable />
+```
+
+Both also take `width` (total table width in px), `initialSort` (`DataGrid`: `{ key, order? }`;
+`VirtualGrid`: `SortCriterion[]` for its multi-sort), and `sortLoading` (`true`, or a number of
+ms) to show a loading overlay while a sort runs - useful once a dataset is large enough that
+sorting it visibly blocks the main thread:
+
+```vue
+<DataGrid :columns="columns" :rows="rows" sortable :initial-sort="{ key: 'score', order: 'desc' }" :sort-loading="true" />
 ```
 
 ### Row and column shape
@@ -107,9 +118,27 @@ shrinks (or the header cell disappears entirely) as its leaves are hidden via th
 
 Both components accept per-column scoped slots (`#cell-<key>`, `#header-<key>`), plus `#expand` (the row's detail panel) and `#empty` (empty-state content).
 
+### Events
+
+`sort`, `row-click`, `row-dblclick`, `row-contextmenu`, `update:selected`, `update:checked`,
+`column-resize`, `update:columns`, `row-edit` (a cell's edit was committed), `edit-start` (a
+cell just entered edit mode), `expand`, `collapse`, `col-show`, `col-hide` (a column's
+visibility changed, from the column menu or `showColumn`/`hideColumn`/`initColumns`),
+`open-all`, `fold-all` (fired by calling the matching method - see below), `import-csv` (see
+CSV import below). `DataGrid` also has `row-move`; `VirtualGrid` also has `page-change`.
+
 ### Imperative API
 
-Both components expose methods via a template ref: `open(id)`, `fold(id)`, `toggle(id)` (tree rows), `openAll()`, `foldAll()`, `uncheckAll()`, `getCsv()`, `exportCsv(filename)`, `select(id)`, `hideExpand()`. `VirtualGrid` additionally exposes `setFilter(predicate)`, `clearFilter()`, `showLoading(delay?)`, `hideLoading()`, `scrollToIndex(i)`, `goToPage(n)`.
+Both components expose, via a template ref:
+
+- **Rows**: `select(id)`, `unselect()`, `check(id)`, `uncheck(id)`, `uncheckAll()`, `listChecked()`, `activeIndex()` (id of whichever row is expanded, else selected, else being edited - `null` if none)
+- **Tree**: `open(id)`, `fold(id)`, `toggle(id)`, `openAll()`, `foldAll()`
+- **Columns**: `showColumn(key)`, `hideColumn(key)`, `initColumns(keys)` (show exactly these, hide the rest)
+- **Expand panel**: `showExpand(id)`, `hideExpand()`, `getExpand()` (the currently expanded `GridRow`, or `null`)
+- **Inline edit**: `showEditRow(id)`, `hideEditRow()`, `getEditRow()` (the currently-edited `GridRow`, or `null`)
+- **CSV**: `getCsv()`, `exportCsv(filename)`, `setCsv(csv)`, `setCsvFile(file)` (parses and emits `import-csv` with the row data - neither component owns `rows` to replace it directly, since it's a prop; apply the result to your reactive row source in the listener)
+
+`VirtualGrid` additionally exposes `setFilter(predicate)`, `clearFilter()`, `showLoading(delay?)`, `hideLoading()`, `scrollToIndex(i)`, `goToPage(n)`, `getPage()` (1-indexed, unlike the original's 0-indexed `getPage()`).
 
 ## Composables
 
@@ -124,6 +153,9 @@ Two built-in themes (`theme="classic"` / `theme="dark"`), ported from jui-grid's
 - No jQuery, no dependency on the legacy `juijs`/`juijs-ui` runtime — everything is plain Vue reactivity.
 - Props/emits/slots follow Vue conventions rather than mirroring the original's `options`-object + `event` map API.
 - Row drag-reorder is HTML5 drag-and-drop instead of manual mousedown/mousemove/mouseup + cloned DOM element.
+- `update`/`updateTree`/`append`/`insert`/`remove`/`reset`/`move`/`get*`/`list*`/`size`/`count` aren't exposed methods - `rows`/`columns` are props the consumer already owns and mutates directly (as shown throughout `src/pages/`), rather than the grid holding its own copy of the data.
+- No `xssFilter` option: Vue's `{{ }}` text interpolation already HTML-escapes every cell value by default (the original needed it because it built rows via jQuery's `.html()`). A column that opts out via a `#cell-<key>` slot rendering raw HTML is the consumer's own responsibility, same as anywhere else in Vue.
+- No `sortCache` option: `sortedRows`/`flatRows` are plain Vue `computed()`s, which already skip recomputation whenever their reactive inputs haven't changed - the caching the original's `sortCache` opted into is the default behavior here.
 
 ## Dependency on jui-ui-vue
 

@@ -17,6 +17,7 @@ export const exampleRoutes: ExampleRoute[] = [
   { path: '/xtable-tree', name: 'xtable-tree', label: 'Deep tree (500 levels)', source: 'xtable_tree.html', component: () => import('./pages/XtableTreePage.vue') },
   { path: '/xtable-vscroll', name: 'xtable-vscroll', label: 'Virtual scroll + tree', source: 'xtable_vscroll.html', component: () => import('./pages/XtableVscrollPage.vue') },
   { path: '/xtable-test', name: 'xtable-test', label: 'Wide header stress test', source: 'xtable_test.html', component: () => import('./pages/XtableTestPage.vue') },
+  { path: '/api-audit', name: 'api-audit', label: 'API audit', source: 'api.jui.io/v2', component: () => import('./pages/ApiAuditPage.vue') },
 ]
 
 export const router = createRouter({

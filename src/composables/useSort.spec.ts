@@ -74,4 +74,11 @@ describe('useSort', () => {
     toggleSort('name', 'desc')
     expect(state.order).toBe('desc')
   })
+
+  it('honors an initial sort state (sortIndex/sortOrder parity)', () => {
+    const rows = ref(makeRows())
+    const { state, sortedRows } = useSort(rows, undefined, { key: 'name', order: 'desc' })
+    expect(state).toEqual({ key: 'name', order: 'desc' })
+    expect(sortedRows.value.map((r) => r.data.name)).toEqual(['cherry', 'banana', 'apple'])
+  })
 })

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { rowsToCsv, parseCsv } from './useCsv'
+import { rowsToCsv, parseCsv, csvToRowData } from './useCsv'
 import type { GridColumn, GridRow } from '../types'
 
 const columns: GridColumn[] = [
@@ -60,5 +60,25 @@ describe('parseCsv', () => {
       ['a', 'b'],
       ['c', 'd'],
     ])
+  })
+})
+
+describe('csvToRowData', () => {
+  it('maps data rows to objects keyed by column, skipping the header row', () => {
+    const csv = rowsToCsv(columns, rows.slice(0, 1))
+    expect(csvToRowData(csv, columns)).toEqual([{ name: 'apple', qty: '3' }])
+  })
+
+  it('round-trips quoted fields back into the right column', () => {
+    const csv = rowsToCsv(columns, [rows[1]])
+    expect(csvToRowData(csv, columns)).toEqual([{ name: 'has, comma', qty: '1' }])
+  })
+
+  it('ignores a trailing blank line', () => {
+    expect(csvToRowData('Name,Qty\napple,3\n', columns)).toEqual([{ name: 'apple', qty: '3' }])
+  })
+
+  it('returns an empty array for header-only input', () => {
+    expect(csvToRowData('Name,Qty', columns)).toEqual([])
   })
 })

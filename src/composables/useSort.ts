@@ -6,8 +6,8 @@ import { compareRowValues } from './sortCompare'
  * Sorts the top-level rows array by a column key. Mirrors jui-grid's original
  * behavior of only reordering the root rows, leaving nested `children` untouched.
  */
-export function useSort(rows: Ref<GridRow[]>, onSort?: (state: SortState) => void) {
-  const state = reactive<SortState>({ key: null, order: 'asc' })
+export function useSort(rows: Ref<GridRow[]>, onSort?: (state: SortState) => void, initial?: SortState) {
+  const state = reactive<SortState>({ key: initial?.key ?? null, order: initial?.order ?? 'asc' })
 
   const sortedRows = computed(() => {
     if (!state.key) return rows.value

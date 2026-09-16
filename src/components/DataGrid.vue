@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, toRef } from 'vue'
-import type { GridColumn, GridRow, RowId, SortState } from '../types'
+import { computed, nextTick, toRef } from 'vue'
+import type { GridColumn, GridRow, RowId, SortOrder, SortState } from '../types'
 import { useSort } from '../composables/useSort'
 import { useColumns } from '../composables/useColumns'
 import { useColumnResize } from '../composables/useColumnResize'
@@ -9,7 +9,8 @@ import { useExpandRow } from '../composables/useExpandRow'
 import { useEditableRow } from '../composables/useEditableRow'
 import { useRowDrag } from '../composables/useRowDrag'
 import { useTreeRows } from '../composables/useTreeRows'
-import { rowsToCsv, downloadCsv } from '../composables/useCsv'
+import { useLoading } from '../composables/useLoading'
+import { rowsToCsv, downloadCsv, csvToRowData } from '../composables/useCsv'
 import { flattenLeafColumns, useColumnGroups } from '../composables/useColumnGroups'
 import ColumnMenu from './ColumnMenu.vue'
 
@@ -28,6 +29,16 @@ const props = withDefaults(
     /** Built-in dropdown for toggling column visibility (top-right corner). */
     columnMenu?: boolean
     theme?: 'classic' | 'dark'
+    /** Total table width in px (jui-grid's `width` config). */
+    width?: number
+    /** Initial sort column/order (jui-grid's `sortIndex`/`sortOrder`). */
+    initialSort?: { key: string; order?: SortOrder }
+    /**
+     * Shows a loading overlay while a (potentially expensive) sort runs, by deferring the
+     * actual sort to the next animation frame so the overlay paints first. `true` shows it
+     * immediately; a number delays showing it by that many ms (jui-grid's `sortLoading`).
+     */
+    sortLoading?: boolean | number
   }>(),
   {
     sortable: false,
@@ -40,6 +51,9 @@ const props = withDefaults(
     scrollHeight: undefined,
     columnMenu: false,
     theme: 'classic',
+    width: undefined,
+    initialSort: undefined,
+    sortLoading: false,
   },
 )
 
@@ -54,8 +68,14 @@ const emit = defineEmits<{
   'update:columns': [columns: GridColumn[]]
   'row-move': [fromId: RowId, toId: RowId]
   'row-edit': [row: GridRow, data: Record<string, any>]
+  'edit-start': [row: GridRow]
   expand: [row: GridRow]
   collapse: [row: GridRow]
+  'col-show': [column: GridColumn]
+  'col-hide': [column: GridColumn]
+  'open-all': []
+  'fold-all': []
+  'import-csv': [rows: Record<string, string>[]]
 }>()
 
 const columnsRef = toRef(props, 'columns')
@@ -75,25 +95,80 @@ function toPlainColumns(): GridColumn[] {
   }))
 }
 
-const { state: columnState, visibleColumns, toggleColumn } = useColumns(leafColumnDefs, () => emit('update:columns', toPlainColumns()))
+const {
+  state: columnState,
+  visibleColumns,
+  toggleColumn,
+  showColumn,
+  hideColumn,
+  initColumns,
+} = useColumns(leafColumnDefs, (col) => {
+  emit('update:columns', toPlainColumns())
+  if (col.visible) emit('col-show', col)
+  else emit('col-hide', col)
+})
 
 const { headerRows } = useColumnGroups(columnsRef, (key) => columnState.find((c) => c.key === key)?.visible ?? true)
 
-const { state: sortState, sortedRows, toggleSort } = useSort(rowsRef, (s) => emit('sort', s))
+const { state: sortState, sortedRows, toggleSort } = useSort(
+  rowsRef,
+  (s) => emit('sort', s),
+  props.initialSort ? { key: props.initialSort.key, order: props.initialSort.order ?? 'asc' } : undefined,
+)
 
 const sortedForTree = computed(() => sortedRows.value)
-const { toggle: toggleTree, open: openTreeRow, fold: foldTreeRow, openAll, foldAll, flatRows } = useTreeRows(sortedForTree)
+const { toggle: toggleTree, open: openTreeRow, fold: foldTreeRow, openAll: openAllRows, foldAll: foldAllRows, flatRows } = useTreeRows(sortedForTree)
 
-const { select, isSelected, isChecked, toggleCheck, uncheckAll, checkedIds } = useRowSelection()
+function openAll() {
+  openAllRows()
+  emit('open-all')
+}
 
-const { showExpand, hideExpand, isExpanded } = useExpandRow()
+function foldAll() {
+  foldAllRows()
+  emit('fold-all')
+}
 
-const { draft, startEdit, commitEdit, isEditing } = useEditableRow((row, data) => {
+const { selectedId, select, unselect, isSelected, check, uncheck, isChecked, toggleCheck, uncheckAll, checkedIds } = useRowSelection()
+
+function listChecked(): RowId[] {
+  return [...checkedIds]
+}
+
+const { expandedId, showExpand, hideExpand, isExpanded } = useExpandRow()
+
+function getExpand(): GridRow | null {
+  if (expandedId.value == null) return null
+  return flatRows.value.find((f) => f.row.id === expandedId.value)?.row ?? null
+}
+
+const { editingId, draft, startEdit, cancelEdit, commitEdit, isEditing } = useEditableRow((row, data) => {
   Object.assign(row.data, data)
   emit('row-edit', row, data)
 })
 
+function startEditRow(row: GridRow) {
+  startEdit(row)
+  emit('edit-start', row)
+}
+
+function showEditRow(id: RowId) {
+  const row = flatRows.value.find((f) => f.row.id === id)?.row
+  if (row) startEditRow(row)
+}
+
+function getEditRow(): GridRow | null {
+  if (editingId.value == null) return null
+  return flatRows.value.find((f) => f.row.id === editingId.value)?.row ?? null
+}
+
+function activeIndex(): RowId | null {
+  return expandedId.value ?? selectedId.value ?? editingId.value ?? null
+}
+
 const { dragOverId, onDragStart, onDragOver, onDragLeave, onDrop, onDragEnd } = useRowDrag((fromId, toId) => emit('row-move', fromId, toId))
+
+const { isLoading: isSorting, showLoading: showSortLoading, hideLoading: hideSortLoading } = useLoading()
 
 const { onResizeStart } = useColumnResize(
   (key) => columnState.find((c) => c.key === key)?.width ?? 120,
@@ -120,7 +195,21 @@ function isEditableColumn(column: GridColumn) {
 
 function onHeaderClick(column: GridColumn) {
   if (!isSortable(column)) return
-  toggleSort(column.key)
+
+  if (props.sortLoading) {
+    // Show the overlay immediately, then let a paint happen before running the
+    // (synchronous, potentially expensive) sort - not delaying the overlay itself.
+    showSortLoading()
+    const delay = props.sortLoading === true ? 500 : props.sortLoading
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        toggleSort(column.key)
+        nextTick(hideSortLoading)
+      }, delay)
+    })
+  } else {
+    toggleSort(column.key)
+  }
 }
 
 function ariaSort(column: GridColumn): 'ascending' | 'descending' | 'none' | undefined {
@@ -175,7 +264,7 @@ function onRowContextMenu(row: GridRow, e: MouseEvent) {
 
 function onCellDblClick(row: GridRow, column: GridColumn) {
   if (isEditableColumn(column)) {
-    startEdit(row)
+    startEditRow(row)
   } else if (props.expandable) {
     toggleExpandRow(row)
   }
@@ -208,25 +297,63 @@ function exportCsv(filename = 'table.csv') {
   downloadCsv(filename, getCsv())
 }
 
+/**
+ * Parses a CSV string (shaped like `getCsv()`'s output) and emits the parsed rows via
+ * `import-csv` - this component owns no row data of its own to replace (`rows` is a prop),
+ * so applying the result to your reactive row source is up to the listener.
+ */
+function setCsv(csv: string) {
+  emit('import-csv', csvToRowData(csv, visibleColumns.value))
+}
+
+function setCsvFile(file: File) {
+  const reader = new FileReader()
+  reader.onload = () => setCsv(String(reader.result ?? ''))
+  reader.readAsText(file)
+}
+
 defineExpose({
   open: openTreeRow,
   fold: foldTreeRow,
   toggle: toggleTree,
   openAll,
   foldAll,
+  select,
+  unselect,
+  check,
+  uncheck,
   uncheckAll,
+  listChecked,
+  showColumn,
+  hideColumn,
+  initColumns,
+  showExpand,
+  hideExpand,
+  getExpand,
+  showEditRow,
+  hideEditRow: cancelEdit,
+  getEditRow,
+  activeIndex,
   getCsv,
   exportCsv,
-  select,
-  hideExpand,
+  setCsv,
+  setCsvFile,
 })
 </script>
 
 <template>
   <div class="jui-grid-vue-root" :class="`theme-${theme}`">
     <ColumnMenu v-if="columnMenu" :columns="columnState" @toggle="toggleColumn" />
+    <div v-if="isSorting" class="loading-overlay" role="status" aria-live="polite">
+      <slot name="loading">Loading…</slot>
+    </div>
     <div class="scroll-container" :style="scrollHeight ? { maxHeight: scrollHeight + 'px', overflow: 'auto' } : undefined">
-    <table class="table classic" :class="{ expand: expandable, 'has-scroll': scrollHeight }" role="grid">
+    <table
+      class="table classic"
+      :class="{ expand: expandable, 'has-scroll': scrollHeight }"
+      :style="width ? { width: width + 'px' } : undefined"
+      role="grid"
+    >
       <colgroup>
         <col v-if="checkable" style="width: 28px" />
         <col v-if="draggable" style="width: 28px" />
@@ -400,5 +527,16 @@ thead th[tabindex]:focus-visible,
 
 .col-drag {
   cursor: grab;
+}
+
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
 }
 </style>

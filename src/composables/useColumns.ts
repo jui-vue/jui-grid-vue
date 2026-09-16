@@ -51,5 +51,13 @@ export function useColumns(columns: Ref<GridColumn[]>, onVisibilityChange?: (col
     if (col) col.width = width
   }
 
-  return { state, visibleColumns, showColumn, hideColumn, toggleColumn, setColumnWidth }
+  /** Shows exactly the given keys, hiding every other column (jui-grid's `initColumns`). */
+  function initColumns(keys: string[]) {
+    for (const col of state) {
+      if (keys.includes(col.key)) showColumn(col.key)
+      else hideColumn(col.key)
+    }
+  }
+
+  return { state, visibleColumns, showColumn, hideColumn, toggleColumn, setColumnWidth, initColumns }
 }

@@ -88,4 +88,17 @@ describe('useMultiSort', () => {
     toggleSort('team', true)
     expect(onSort).toHaveBeenCalledWith([{ key: 'team', order: 'asc' }])
   })
+
+  it('honors an initial set of sort criteria', () => {
+    const rows = ref(makeRows())
+    const { criteria, sortedRows } = useMultiSort(rows, undefined, [
+      { key: 'team', order: 'asc' },
+      { key: 'score', order: 'desc' },
+    ])
+    expect(criteria).toEqual([
+      { key: 'team', order: 'asc' },
+      { key: 'score', order: 'desc' },
+    ])
+    expect(sortedRows.value.map((r) => r.id)).toEqual([2, 3, 1, 4])
+  })
 })

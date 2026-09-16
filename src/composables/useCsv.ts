@@ -29,6 +29,24 @@ export function downloadCsv(filename: string, csv: string) {
   URL.revokeObjectURL(url)
 }
 
+/**
+ * Parses a CSV string produced by (or shaped like) `rowsToCsv`'s output for the given
+ * columns - positional, skips the header row - into plain data objects keyed by column.key.
+ */
+export function csvToRowData(csv: string, columns: GridColumn[]): Record<string, string>[] {
+  const [, ...dataRows] = parseCsv(csv)
+
+  return dataRows
+    .filter((cells) => cells.length > 1 || cells[0] !== '')
+    .map((cells) => {
+      const data: Record<string, string> = {}
+      columns.forEach((c, i) => {
+        data[c.key] = cells[i] ?? ''
+      })
+      return data
+    })
+}
+
 export function parseCsv(csv: string): string[][] {
   const rows: string[][] = []
   let row: string[] = []

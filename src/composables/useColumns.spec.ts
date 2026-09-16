@@ -90,6 +90,31 @@ describe('useColumns', () => {
     scope.stop()
   })
 
+  it('initColumns shows exactly the given keys and hides everything else', () => {
+    const scope = effectScope()
+    scope.run(() => {
+      const columns = ref(makeColumns())
+      const { visibleColumns, initColumns } = useColumns(columns)
+      initColumns(['a', 'c'])
+      expect(visibleColumns.value.map((c) => c.key)).toEqual(['a', 'c'])
+      initColumns(['b'])
+      expect(visibleColumns.value.map((c) => c.key)).toEqual(['b'])
+    })
+    scope.stop()
+  })
+
+  it('initColumns fires the visibility callback once per column that actually changed', () => {
+    const scope = effectScope()
+    scope.run(() => {
+      const columns = ref(makeColumns())
+      const onChange = vi.fn()
+      const { initColumns } = useColumns(columns, onChange)
+      initColumns(['a']) // b and c change, a stays visible
+      expect(onChange).toHaveBeenCalledTimes(2)
+    })
+    scope.stop()
+  })
+
   it('setColumnWidth updates a column width', () => {
     const scope = effectScope()
     scope.run(() => {
