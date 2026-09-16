@@ -14,6 +14,7 @@ import { usePaging } from '../composables/usePaging'
 import { useVirtualScroll } from '../composables/useVirtualScroll'
 import { useLoading } from '../composables/useLoading'
 import { rowsToCsv, downloadCsv } from '../composables/useCsv'
+import { flattenLeafColumns, useColumnGroups } from '../composables/useColumnGroups'
 import ColumnMenu from './ColumnMenu.vue'
 
 const props = withDefaults(
@@ -69,6 +70,7 @@ const emit = defineEmits<{
 
 const columnsRef = toRef(props, 'columns')
 const rowsRef = toRef(props, 'rows')
+const leafColumnDefs = computed(() => flattenLeafColumns(props.columns))
 
 function toPlainColumns(): GridColumn[] {
   return columnState.map((c) => ({
@@ -83,7 +85,9 @@ function toPlainColumns(): GridColumn[] {
   }))
 }
 
-const { state: columnState, visibleColumns, toggleColumn } = useColumns(columnsRef, () => emit('update:columns', toPlainColumns()))
+const { state: columnState, visibleColumns, toggleColumn } = useColumns(leafColumnDefs, () => emit('update:columns', toPlainColumns()))
+
+const { headerRows } = useColumnGroups(columnsRef, (key) => columnState.find((c) => c.key === key)?.visible ?? true)
 
 const { filteredRows, setFilter, clearFilter, hasFilter } = useFilter(rowsRef)
 
@@ -268,28 +272,34 @@ defineExpose({
       @scroll="onScroll"
     >
       <table class="table classic has-scroll" role="grid">
+        <colgroup>
+          <col v-if="checkable" style="width: 28px" />
+          <col v-for="column in visibleColumns" :key="column.key" :style="{ width: column.width ? column.width + 'px' : undefined }" />
+        </colgroup>
         <thead>
-          <tr role="row">
-            <th v-if="checkable" class="col-check" role="columnheader"></th>
+          <tr v-for="(headerRow, rowIndex) in headerRows" :key="rowIndex" role="row">
+            <th v-if="rowIndex === 0 && checkable" class="col-check" role="columnheader" :rowspan="headerRows.length"></th>
             <th
-              v-for="(column, index) in visibleColumns"
-              :key="column.key"
+              v-for="cell in headerRow"
+              :key="cell.column.key"
               role="columnheader"
-              :style="{ width: column.width ? column.width + 'px' : undefined }"
-              :class="{ sortable: isSortable(column) }"
-              :aria-sort="ariaSort(column)"
-              :tabindex="isSortable(column) ? 0 : undefined"
-              @click="onHeaderClick(column, $event)"
-              @keydown.enter="onHeaderClick(column, $event as unknown as MouseEvent)"
+              :colspan="cell.colspan > 1 ? cell.colspan : undefined"
+              :rowspan="cell.rowspan > 1 ? cell.rowspan : undefined"
+              :class="{ sortable: cell.isLeaf && isSortable(cell.column) }"
+              :aria-sort="cell.isLeaf ? ariaSort(cell.column) : undefined"
+              :tabindex="cell.isLeaf && isSortable(cell.column) ? 0 : undefined"
+              @click="cell.isLeaf && onHeaderClick(cell.column, $event)"
+              @keydown.enter="cell.isLeaf && onHeaderClick(cell.column, $event as unknown as MouseEvent)"
             >
-              <slot :name="`header-${column.key}`" :column="column">{{ column.label ?? column.key }}</slot>
-              <span v-if="orderOf(column.key)" class="sort-indicator" aria-hidden="true">
-                {{ orderOf(column.key) === 'asc' ? '▲' : '▼' }}<sup v-if="sortCriteria.length > 1">{{ priorityOf(column.key) }}</sup>
+              <slot v-if="cell.isLeaf" :name="`header-${cell.column.key}`" :column="cell.column">{{ cell.column.label ?? cell.column.key }}</slot>
+              <template v-else>{{ cell.column.label ?? cell.column.key }}</template>
+              <span v-if="cell.isLeaf && orderOf(cell.column.key)" class="sort-indicator" aria-hidden="true">
+                {{ orderOf(cell.column.key) === 'asc' ? '▲' : '▼' }}<sup v-if="sortCriteria.length > 1">{{ priorityOf(cell.column.key) }}</sup>
               </span>
               <div
-                v-if="isResizable(column) && index < visibleColumns.length - 1"
+                v-if="cell.isLeaf && isResizable(cell.column) && cell.leafIndex! < visibleColumns.length - 1"
                 class="resize"
-                @mousedown="onResizeStart($event, column, visibleColumns[index + 1])"
+                @mousedown="onResizeStart($event, cell.column, visibleColumns[cell.leafIndex! + 1])"
               ></div>
             </th>
           </tr>
@@ -365,28 +375,34 @@ defineExpose({
 
     <template v-else>
       <table class="table classic" role="grid">
+        <colgroup>
+          <col v-if="checkable" style="width: 28px" />
+          <col v-for="column in visibleColumns" :key="column.key" :style="{ width: column.width ? column.width + 'px' : undefined }" />
+        </colgroup>
         <thead>
-          <tr role="row">
-            <th v-if="checkable" class="col-check" role="columnheader"></th>
+          <tr v-for="(headerRow, rowIndex) in headerRows" :key="rowIndex" role="row">
+            <th v-if="rowIndex === 0 && checkable" class="col-check" role="columnheader" :rowspan="headerRows.length"></th>
             <th
-              v-for="(column, index) in visibleColumns"
-              :key="column.key"
+              v-for="cell in headerRow"
+              :key="cell.column.key"
               role="columnheader"
-              :style="{ width: column.width ? column.width + 'px' : undefined }"
-              :class="{ sortable: isSortable(column) }"
-              :aria-sort="ariaSort(column)"
-              :tabindex="isSortable(column) ? 0 : undefined"
-              @click="onHeaderClick(column, $event)"
-              @keydown.enter="onHeaderClick(column, $event as unknown as MouseEvent)"
+              :colspan="cell.colspan > 1 ? cell.colspan : undefined"
+              :rowspan="cell.rowspan > 1 ? cell.rowspan : undefined"
+              :class="{ sortable: cell.isLeaf && isSortable(cell.column) }"
+              :aria-sort="cell.isLeaf ? ariaSort(cell.column) : undefined"
+              :tabindex="cell.isLeaf && isSortable(cell.column) ? 0 : undefined"
+              @click="cell.isLeaf && onHeaderClick(cell.column, $event)"
+              @keydown.enter="cell.isLeaf && onHeaderClick(cell.column, $event as unknown as MouseEvent)"
             >
-              <slot :name="`header-${column.key}`" :column="column">{{ column.label ?? column.key }}</slot>
-              <span v-if="orderOf(column.key)" class="sort-indicator" aria-hidden="true">
-                {{ orderOf(column.key) === 'asc' ? '▲' : '▼' }}<sup v-if="sortCriteria.length > 1">{{ priorityOf(column.key) }}</sup>
+              <slot v-if="cell.isLeaf" :name="`header-${cell.column.key}`" :column="cell.column">{{ cell.column.label ?? cell.column.key }}</slot>
+              <template v-else>{{ cell.column.label ?? cell.column.key }}</template>
+              <span v-if="cell.isLeaf && orderOf(cell.column.key)" class="sort-indicator" aria-hidden="true">
+                {{ orderOf(cell.column.key) === 'asc' ? '▲' : '▼' }}<sup v-if="sortCriteria.length > 1">{{ priorityOf(cell.column.key) }}</sup>
               </span>
               <div
-                v-if="isResizable(column) && index < visibleColumns.length - 1"
+                v-if="cell.isLeaf && isResizable(cell.column) && cell.leafIndex! < visibleColumns.length - 1"
                 class="resize"
-                @mousedown="onResizeStart($event, column, visibleColumns[index + 1])"
+                @mousedown="onResizeStart($event, cell.column, visibleColumns[cell.leafIndex! + 1])"
               ></div>
             </th>
           </tr>

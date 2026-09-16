@@ -12,6 +12,13 @@ export interface GridColumn {
   align?: 'left' | 'center' | 'right'
   /** Initial show/hide state when a column-visibility menu is used. Defaults to true. */
   visible?: boolean
+  /**
+   * Sub-columns grouped under this one. A column with `children` is a group header only
+   * (spans them via colspan in the top header row) - `key` still must be unique but isn't
+   * used as a data field, and sortable/resizable/editable/width/align/visible are ignored
+   * on it (they apply to its leaf descendants instead).
+   */
+  children?: GridColumn[]
 }
 
 export interface GridRow<T = Record<string, any>> {

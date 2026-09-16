@@ -21,8 +21,7 @@ The demo app (`src/App.vue` + `src/router.ts`) is a small vue-router shell with 
 [jui-grid `examples/*.html`](../jui-grid/examples) scenario, under `src/pages/` — `/table`,
 `/table-tree`, `/xtable` (500k-row virtual scroll), `/xtable-expand`, `/xtable-paging`,
 `/xtable-tree` (500-level deep chain), `/xtable-vscroll` (100k rows + nested append), and
-`/xtable-test` (documented as a simplification: the original's grouped/multi-row header isn't
-something this library supports).
+`/xtable-test` (grouped/multi-row column headers).
 
 ## Usage
 
@@ -68,6 +67,7 @@ interface GridColumn {
   editable?: boolean   // opt-in: only true columns become editable
   align?: 'left' | 'center' | 'right'
   visible?: boolean    // initial show/hide state for the column menu, default true
+  children?: GridColumn[]  // grouped header - see below
 }
 
 interface GridRow<T = Record<string, any>> {
@@ -76,6 +76,32 @@ interface GridRow<T = Record<string, any>> {
   children?: GridRow<T>[]  // renders as an indented, foldable tree row
 }
 ```
+
+#### Grouped (multi-row) column headers
+
+A column with `children` is a group header spanning them with `colspan` in its own header
+row - it isn't itself bound to row data, and its `sortable`/`resizable`/`editable`/`width`/
+`align`/`visible` are ignored (those apply to its leaf descendants). An ungrouped column next
+to a group gets `rowspan` down to the bottom header row, matching the classic HTML
+grouped-header layout:
+
+```ts
+const columns: GridColumn[] = [
+  { key: 'name', label: 'Name' }, // spans both header rows
+  {
+    key: 'contact', // group header - needs a unique key, but it's otherwise unused
+    label: 'Contact',
+    children: [
+      { key: 'email', label: 'Email' },
+      { key: 'phone', label: 'Phone' },
+    ],
+  },
+]
+```
+
+Sorting, resizing and the column menu all still operate on the flattened leaf columns
+(`email`, `phone`, ...) exactly as without grouping - a group header's `colspan` automatically
+shrinks (or the header cell disappears entirely) as its leaves are hidden via the column menu.
 
 ### Slots
 
