@@ -1,13 +1,13 @@
 # jui-grid-vue
 
-A from-scratch Vue 3 rewrite of [jui-grid](https://github.com/juijs/jui-grid)'s `table.js` and `xtable.js`, using Composition API composables and native reactivity instead of jQuery/DOM manipulation. See [`../jui-grid`](../jui-grid) for the original library this ports.
+A from-scratch Vue 3 rewrite of [jui-grid](https://github.com/juijs/jui-grid)'s `table.js` and `xtable.js`, using Composition API composables and native reactivity instead of jQuery/DOM manipulation. See [jui-grid](https://github.com/juijs/jui-grid) for the original library this ports.
 
 Two components are exported:
 
 - **`DataGrid`** — a fully-rendered table: sort, resize, select/check, inline edit, row drag-reorder, tree rows, CSV export, dark theme, column show/hide menu.
 - **`VirtualGrid`** — for large datasets: virtual-scroll or paged rendering, multi-column sort (shift-click), client-side filtering, a loading overlay. Everything `DataGrid` supports except row drag-reorder (the original `xtable.js` didn't support it either).
 
-## Install (within this workspace)
+## Development
 
 ```bash
 npm install
@@ -18,7 +18,7 @@ npm run build:lib  # typecheck + build the publishable package into dist-lib/
 ```
 
 The demo app (`src/App.vue` + `src/router.ts`) is a small vue-router shell with one page per
-[jui-grid `examples/*.html`](../jui-grid/examples) scenario, under `src/pages/` — `/table`,
+[jui-grid `examples/*.html`](https://github.com/juijs/jui-grid/tree/master/examples) scenario, under `src/pages/` — `/table`,
 `/table-tree`, `/xtable` (500k-row virtual scroll), `/xtable-expand`, `/xtable-paging`,
 `/xtable-tree` (500-level deep chain), `/xtable-vscroll` (100k rows + nested append), and
 `/xtable-test` (grouped/multi-row column headers), and `/api-audit` (every method/event
@@ -159,4 +159,4 @@ Two built-in themes (`theme="classic"` / `theme="dark"`), ported from jui-grid's
 
 ## Dependency on jui-ui-vue
 
-The original `jui-grid`'s column show/hide menu (`table.js`'s `setColumnMenu`) depended on `juijs-ui`'s (jQuery-based) dropdown. This port depends on [`jui-ui-vue`](../jui-ui-vue/vue)'s native Vue 3 `Dropdown` component instead (see `src/components/ColumnMenu.vue`) — declared as a `file:../jui-ui-vue/vue` dependency in `package.json` since it isn't published. Both `jui-ui-vue` and `vue` are externalized in `build:lib` (not bundled into `dist-lib`), matching how a real npm dependency/peerDependency would be handled; consumers need `npm install` to resolve them and must import `jui-ui-vue/style.css` themselves (see Usage above).
+The original `jui-grid`'s column show/hide menu (`table.js`'s `setColumnMenu`) depended on `juijs-ui`'s (jQuery-based) dropdown. This port depends on [`jui-ui-vue`](https://github.com/jui-vue/jui-ui-vue/tree/master/vue)'s native Vue 3 `Dropdown` component instead (see `src/components/ColumnMenu.vue`) — declared as a `file:../jui-ui-vue/vue` dependency in `package.json` since it isn't published. Both `jui-ui-vue` and `vue` are externalized in `build:lib` (not bundled into `dist-lib`), matching how a real npm dependency/peerDependency would be handled; consumers need `npm install` to resolve them and must import `jui-ui-vue/style.css` themselves (see Usage above).
