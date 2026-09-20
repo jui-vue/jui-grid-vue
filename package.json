@@ -5,6 +5,23 @@
   "description": "A Vue 3 data grid: sortable, resizable, editable, tree rows and virtual scrolling. A from-scratch Vue port of jui-grid's table.js and xtable.js.",
   "type": "module",
   "license": "MIT",
+  "author": "search5",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jui-vue/jui-grid-vue.git"
+  },
+  "homepage": "https://github.com/jui-vue/jui-grid-vue#readme",
+  "bugs": {
+    "url": "https://github.com/jui-vue/jui-grid-vue/issues"
+  },
+  "keywords": [
+    "vue",
+    "vue3",
+    "data-grid",
+    "table",
+    "grid",
+    "typescript"
+  ],
   "main": "./dist-lib/jui-grid-vue.cjs.js",
   "module": "./dist-lib/jui-grid-vue.es.js",
   "types": "./dist-lib/index.d.ts",
@@ -34,6 +51,9 @@
   },
   "peerDependencies": {
     "vue": "^3.4.0"
+  },
+  "_dependencyNotes": {
+    "jui-ui-vue": "Currently a local workspace link (file:../jui-ui-vue/vue) since jui-ui-vue isn't published yet. npm publish won't block on this, but a file: path is meaningless on a consumer's machine and install will fail for them - before publishing THIS package, publish jui-vue/jui-ui-vue first and change this to a real semver range (e.g. \"^0.0.1\") pointing at the published version."
   },
   "dependencies": {
     "jui-ui-vue": "file:../jui-ui-vue/vue"
