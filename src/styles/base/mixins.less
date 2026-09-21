@@ -81,13 +81,17 @@
 
 // Button backgrounds
 // ------------------
-.btn-bgcolor-2(@color1, @color2, @direction: top) {
+// LESS 4's own vendor-prefixed gradient output for the old @direction-keyword
+// syntax (e.g. "top") comes out malformed here - the -webkit-/-moz- lines lose
+// the direction keyword and end up with color1/color2 swapped (verified
+// against uiplay.jui.io: table.classic thead th rendered with the header
+// gradient reversed, light->dark instead of dark->light). Vendor-prefixed
+// linear-gradient() has been unnecessary for years - every browser this site
+// targets supports the unprefixed syntax, so just emit that with the
+// unambiguous "to bottom" form.
+.btn-bgcolor-2(@color1, @color2, @direction: to bottom) {
   background-color:@color1;
-  background-image:-moz-linear-gradient(@direction, @color1 0%, @color2 100%);
-  background-image:linear-gradient(@direction, @color1 0%,@color2 100%);
-  background-image:-webkit-linear-gradient(@direction, @color1 0%, @color2 100%);
-  background-image:-o-linear-gradient(@direction, @color1 0%, @color2 100%);
-  background-image:-ms-linear-gradient(@direction, @color1 0%, @color2 100%);
+  background-image:linear-gradient(@direction, @color1 0%, @color2 100%);
 }
 
 // Drop shadows
