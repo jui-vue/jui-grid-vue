@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, toRef } from 'vue'
+import { computed, nextTick, onMounted, ref, toRef, watch } from 'vue'
 import type { GridColumn, GridRow, RowId, SortOrder, SortState } from '../types'
 import { useSort } from '../composables/useSort'
 import { useColumns } from '../composables/useColumns'
@@ -25,10 +25,18 @@ const props = withDefaults(
     expandable?: boolean
     editable?: boolean
     draggable?: boolean
+    /** Shows the `::` drag-handle column when draggable. Set false for whole-row dragging with no visible handle. */
+    dragHandle?: boolean
     scrollHeight?: number
     /** Built-in dropdown for toggling column visibility (top-right corner). */
     columnMenu?: boolean
     theme?: 'classic' | 'dark'
+    /** table.less/table.theme.less variant class (jui-grid's own table style options). */
+    variant?: 'classic' | 'simple' | 'expand'
+    /** `.headline` modifier for the `simple` variant - a border between header cells. */
+    headline?: boolean
+    /** `.nowrap` modifier - cell content never wraps to a second line. */
+    nowrap?: boolean
     /** Total table width in px (jui-grid's `width` config). */
     width?: number
     /** Initial sort column/order (jui-grid's `sortIndex`/`sortOrder`). */
@@ -48,9 +56,13 @@ const props = withDefaults(
     expandable: false,
     editable: false,
     draggable: false,
+    dragHandle: true,
     scrollHeight: undefined,
     columnMenu: false,
     theme: 'classic',
+    variant: 'classic',
+    headline: false,
+    nowrap: false,
     width: undefined,
     initialSort: undefined,
     sortLoading: false,
@@ -179,7 +191,21 @@ const { onResizeStart } = useColumnResize(
   (column) => emit('column-resize', column),
 )
 
-const totalColumnCount = computed(() => visibleColumns.value.length + (props.checkable ? 1 : 0) + (props.draggable ? 1 : 0))
+const totalColumnCount = computed(() => visibleColumns.value.length + (props.checkable ? 1 : 0) + (props.draggable && props.dragHandle ? 1 : 0))
+
+const theadRef = ref<HTMLElement | null>(null)
+const headerHeight = ref(0)
+
+function measureHeaderHeight() {
+  if (theadRef.value) headerHeight.value = theadRef.value.getBoundingClientRect().height
+}
+
+onMounted(() => nextTick(measureHeaderHeight))
+watch(() => [props.scrollHeight, headerRows.value.length, visibleColumns.value.length], () => nextTick(measureHeaderHeight))
+
+const scrollContainerStyle = computed(() =>
+  props.scrollHeight ? { maxHeight: props.scrollHeight + headerHeight.value + 'px', overflow: 'auto' } : undefined,
+)
 
 function isSortable(column: GridColumn) {
   return props.sortable && column.sortable !== false
@@ -347,23 +373,23 @@ defineExpose({
     <div v-if="isSorting" class="loading-overlay" role="status" aria-live="polite">
       <slot name="loading">Loading…</slot>
     </div>
-    <div class="scroll-container" :style="scrollHeight ? { maxHeight: scrollHeight + 'px', overflow: 'auto' } : undefined">
+    <div class="scroll-container" :style="scrollContainerStyle">
     <table
-      class="table classic"
-      :class="{ expand: expandable, 'has-scroll': scrollHeight }"
+      class="table"
+      :class="[variant, { expand: expandable, 'has-scroll': scrollHeight, headline, nowrap }]"
       :style="width ? { width: width + 'px' } : undefined"
       role="grid"
     >
       <colgroup>
         <col v-if="checkable" style="width: 28px" />
-        <col v-if="draggable" style="width: 28px" />
+        <col v-if="draggable && dragHandle" style="width: 28px" />
         <col v-for="column in visibleColumns" :key="column.key" :style="{ width: column.width ? column.width + 'px' : undefined }" />
       </colgroup>
-      <thead>
+      <thead ref="theadRef">
         <tr v-for="(headerRow, rowIndex) in headerRows" :key="rowIndex" role="row">
           <template v-if="rowIndex === 0">
             <th v-if="checkable" class="col-check" role="columnheader" :rowspan="headerRows.length"></th>
-            <th v-if="draggable" class="col-drag" role="columnheader" :rowspan="headerRows.length"></th>
+            <th v-if="draggable && dragHandle" class="col-drag" role="columnheader" :rowspan="headerRows.length"></th>
           </template>
           <th
             v-for="cell in headerRow"
@@ -392,8 +418,8 @@ defineExpose({
       </thead>
       <tbody>
         <tr v-if="flatRows.length === 0" role="row">
-          <td class="none" role="gridcell" :colspan="totalColumnCount">
-            <slot name="empty"><div class="msg">No Data</div></slot>
+          <td class="none" role="gridcell" style="text-align: center;" :colspan="totalColumnCount">
+            <slot name="empty">Data does not exist.</slot>
           </td>
         </tr>
         <template v-for="flat in flatRows" :key="flat.row.id">
@@ -416,7 +442,7 @@ defineExpose({
             <td v-if="checkable" class="col-check" role="gridcell" @click.stop>
               <input type="checkbox" :checked="isChecked(flat.row.id)" @change="onToggleCheck(flat.row.id)" />
             </td>
-            <td v-if="draggable" class="col-drag" role="gridcell">::</td>
+            <td v-if="draggable && dragHandle" class="col-drag" role="gridcell">::</td>
             <td
               v-for="(column, colIndex) in visibleColumns"
               :key="column.key"
@@ -509,6 +535,8 @@ th.sortable {
   background: none;
   padding: 0;
   font: inherit;
+  line-height: 1;
+  vertical-align: middle;
   color: inherit;
 }
 

@@ -26,6 +26,8 @@ const props = withDefaults(
     rowHeight?: number
     height?: number
     pageSize?: number
+    /** Shows the built-in Prev/Page N/Next pager below the table in 'paging' mode. */
+    showPager?: boolean
     sortable?: boolean
     resizable?: boolean
     selectable?: boolean
@@ -34,6 +36,10 @@ const props = withDefaults(
     editable?: boolean
     columnMenu?: boolean
     theme?: 'classic' | 'dark'
+    /** table.less/table.theme.less variant class (jui-grid's own table style options). */
+    variant?: 'classic' | 'simple' | 'expand'
+    /** `.headline` modifier for the `simple` variant - a border between header cells. */
+    headline?: boolean
     loading?: boolean
     /** Total table width in px (jui-grid's `width` config). */
     width?: number
@@ -51,6 +57,7 @@ const props = withDefaults(
     rowHeight: 32,
     height: 400,
     pageSize: 50,
+    showPager: true,
     sortable: false,
     resizable: false,
     selectable: false,
@@ -59,6 +66,8 @@ const props = withDefaults(
     editable: false,
     columnMenu: false,
     theme: 'classic',
+    variant: 'classic',
+    headline: false,
     loading: false,
     width: undefined,
     initialSort: undefined,
@@ -391,7 +400,7 @@ defineExpose({
       :style="{ height: height + 'px', overflow: 'auto' }"
       @scroll="onScroll"
     >
-      <table class="table classic has-scroll" :style="width ? { width: width + 'px' } : undefined" role="grid">
+      <table class="table has-scroll" :class="[variant, { headline }]" :style="width ? { width: width + 'px' } : undefined" role="grid">
         <colgroup>
           <col v-if="checkable" style="width: 28px" />
           <col v-for="column in visibleColumns" :key="column.key" :style="{ width: column.width ? column.width + 'px' : undefined }" />
@@ -429,8 +438,8 @@ defineExpose({
             <td :colspan="totalColumnCount" :style="{ padding: 0, border: 'none' }"></td>
           </tr>
           <tr v-if="totalRowCount === 0" role="row">
-            <td class="none" role="gridcell" :colspan="totalColumnCount">
-              <slot name="empty"><div class="msg">No Data</div></slot>
+            <td class="none" role="gridcell" style="text-align: center;" :colspan="totalColumnCount">
+              <slot name="empty">Data does not exist.</slot>
             </td>
           </tr>
           <template v-for="flat in visibleFlatRows" :key="flat.row.id">
@@ -494,7 +503,7 @@ defineExpose({
     </div>
 
     <template v-else>
-      <table class="table classic" :style="width ? { width: width + 'px' } : undefined" role="grid">
+      <table class="table" :class="[variant, { headline }]" :style="width ? { width: width + 'px' } : undefined" role="grid">
         <colgroup>
           <col v-if="checkable" style="width: 28px" />
           <col v-for="column in visibleColumns" :key="column.key" :style="{ width: column.width ? column.width + 'px' : undefined }" />
@@ -529,8 +538,8 @@ defineExpose({
         </thead>
         <tbody>
           <tr v-if="totalRowCount === 0" role="row">
-            <td class="none" role="gridcell" :colspan="totalColumnCount">
-              <slot name="empty"><div class="msg">No Data</div></slot>
+            <td class="none" role="gridcell" style="text-align: center;" :colspan="totalColumnCount">
+              <slot name="empty">Data does not exist.</slot>
             </td>
           </tr>
           <template v-for="flat in visibleFlatRows" :key="flat.row.id">
@@ -588,7 +597,7 @@ defineExpose({
         </tbody>
       </table>
 
-      <div class="pager">
+      <div v-if="showPager" class="pager">
         <button type="button" :disabled="paging.currentPage.value <= 1" @click="goToPage(paging.currentPage.value - 1)">Prev</button>
         <span>Page {{ paging.currentPage.value }} / {{ paging.pageCount.value }}</span>
         <button type="button" :disabled="paging.currentPage.value >= paging.pageCount.value" @click="goToPage(paging.currentPage.value + 1)">Next</button>
@@ -647,6 +656,8 @@ th.sortable {
   background: none;
   padding: 0;
   font: inherit;
+  line-height: 1;
+  vertical-align: middle;
   color: inherit;
 }
 

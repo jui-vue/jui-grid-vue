@@ -6,6 +6,13 @@ table.table {
   border: 0;
   width: 100%;
 
+  &.body-scroll {
+    > tbody {
+      display: block;
+      overflow: auto;
+    }
+  }
+
   > thead {
     .user-select(none);
 
