@@ -2,9 +2,12 @@
 // same as vue) - consumers import it themselves alongside this package's own stylesheet.
 import './styles/index.less'
 
-export { default as DataGrid } from './components/DataGrid.vue'
-export { default as VirtualGrid } from './components/VirtualGrid.vue'
-export { default as ColumnMenu } from './components/ColumnMenu.vue'
+import type { App } from 'vue'
+import DataGrid from './components/DataGrid.vue'
+import VirtualGrid from './components/VirtualGrid.vue'
+import ColumnMenu from './components/ColumnMenu.vue'
+
+export { DataGrid, VirtualGrid, ColumnMenu }
 export * from './types'
 export * from './composables/useSort'
 export * from './composables/useMultiSort'
@@ -20,3 +23,13 @@ export * from './composables/usePaging'
 export * from './composables/useFilter'
 export * from './composables/useLoading'
 export * from './composables/useVirtualScroll'
+
+const components = { DataGrid, VirtualGrid, ColumnMenu }
+
+const install = (app: App) => {
+  for (const [name, component] of Object.entries(components)) {
+    app.component(name, component)
+  }
+}
+
+export default { install }
