@@ -21,7 +21,7 @@ export default defineConfig({
       entry: new URL('src/index.ts', import.meta.url).pathname,
       name: 'JuiGridVue',
       fileName: (format) => `jui-grid-vue.${format}.js`,
-      formats: ['es', 'cjs'],
+      formats: ['es', 'cjs', 'umd'],
     },
     rollupOptions: {
       // jui-ui-vue is a real "dependencies" entry (not bundled) - npm installs it for consumers,

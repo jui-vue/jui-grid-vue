@@ -53,10 +53,10 @@
     "vue": "^3.4.0"
   },
   "_dependencyNotes": {
-    "jui-ui-vue": "Currently a local workspace link (file:../jui-ui-vue/vue) since jui-ui-vue isn't published yet. npm publish won't block on this, but a file: path is meaningless on a consumer's machine and install will fail for them - before publishing THIS package, publish juijs-vue/jui-ui-vue first and change this to a real semver range (e.g. \"^0.0.1\") pointing at the published version."
+    "jui-ui-vue": "Currently a local workspace link (file:../jui-ui-vue) since jui-ui-vue isn't published yet. npm publish won't block on this, but a file: path is meaningless on a consumer's machine and install will fail for them - before publishing THIS package, publish juijs-vue/jui-ui-vue first and change this to a real semver range (e.g. \"^0.0.1\") pointing at the published version."
   },
   "dependencies": {
-    "jui-ui-vue": "file:../jui-ui-vue/vue"
+    "jui-ui-vue": "file:../jui-ui-vue"
   },
   "devDependencies": {
     "@types/node": "^24.13.3",
