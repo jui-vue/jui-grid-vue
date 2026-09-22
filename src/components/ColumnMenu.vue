@@ -31,9 +31,12 @@ async function onToggleClick() {
   // 이 토글 버튼은 테이블 오른쪽 끝(top:4px;right:4px)에 있어서, 패널을 왼쪽 정렬로 그대로 두면
   // 테이블/iframe 뷰포트 밖으로 튀어나가 완전히 안 보이게 된다(실제로 겪은 버그) - 버튼의 오른쪽
   // 끝에 패널의 오른쪽 끝을 맞춰서 항상 컨테이너 안쪽으로 펼쳐지게 한다.
-  const panelEl = btn.parentElement?.querySelector<HTMLElement>('.column-menu-panel')
-  if (panelEl) {
-    const left = btn.offsetLeft + btn.offsetWidth - panelEl.offsetWidth
+  // panelEl(.column-menu-panel) 자신이 아니라 그 안의 <ul>의 폭을 써야 한다 - ul이
+  // position:absolute라 래퍼가 min-width만큼 더 넓어도 그 안에서 왼쪽 정렬로만 떠 있고, 래퍼
+  // 기준으로 우측 정렬하면 실제 보이는 내용물은 그만큼 왼쪽으로 밀려나 버튼과 떨어져 보인다.
+  const ulEl = btn.parentElement?.querySelector<HTMLElement>('.column-menu-panel ul')
+  if (ulEl) {
+    const left = btn.offsetLeft + btn.offsetWidth - ulEl.offsetWidth
     dropdown.value?.move(left, top)
   }
 }
@@ -96,15 +99,17 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
 }
 
 .column-menu-panel {
-  min-width: 140px;
   color: #000;
 }
 
-/* Dropdown의 <ul>은 position:absolute라 .column-menu-panel 자신의 높이에 기여하지 않는다 -
-   max-height/overflow는(많은 컬럼일 때 스크롤 필요) 래퍼가 아니라 실제 콘텐츠인 ul 자체에
-   줘야 한다. 래퍼에 두면 0 높이 기준으로 overflow:auto가 전부 잘라버려서(실제로 겪은 버그 -
-   "⋮" 버튼을 눌러도 패널이 완전히 안 보였다) 메뉴 자체가 보이지 않게 된다. */
+/* Dropdown의 <ul>은 position:absolute라 .column-menu-panel 자신의 높이/폭에 기여하지 않는다 -
+   min-width/max-height/overflow는(짧은 목록도 너무 좁지 않게, 많은 컬럼일 때 스크롤 필요)
+   래퍼가 아니라 실제 콘텐츠인 ul 자체에 줘야 한다. 래퍼에 두면 0 높이 기준으로 overflow:auto가
+   전부 잘라버리고("⋮" 버튼을 눌러도 패널이 완전히 안 보였다), min-width도 래퍼만 넓힐 뿐 왼쪽
+   정렬된 ul은 그 안에서 그대로라 우측 정렬 계산이 실제 내용물과 어긋나 버튼과 멀어져 보인다 -
+   둘 다 실제로 겪은 버그다. */
 .column-menu-panel :deep(ul) {
+  min-width: 140px;
   max-height: 240px;
   overflow-y: auto;
 }
