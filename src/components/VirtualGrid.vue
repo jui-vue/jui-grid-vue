@@ -26,6 +26,12 @@ const props = withDefaults(
     rowHeight?: number
     height?: number
     pageSize?: number
+    /**
+     * In 'paging' mode, wraps the table in a fixed-height scrollable container (sticky
+     * header) so a single page's rows can exceed the visible area - jui-grid's `scrollHeight`.
+     * Has no effect in 'virtual' mode, which already uses `height` for its own windowing.
+     */
+    scrollHeight?: number
     /** Shows the built-in Prev/Page N/Next pager below the table in 'paging' mode. */
     showPager?: boolean
     sortable?: boolean
@@ -57,6 +63,7 @@ const props = withDefaults(
     rowHeight: 32,
     height: 400,
     pageSize: 50,
+    scrollHeight: undefined,
     showPager: true,
     sortable: false,
     resizable: false,
@@ -503,7 +510,8 @@ defineExpose({
     </div>
 
     <template v-else>
-      <table class="table" :class="[variant, { headline }]" :style="width ? { width: width + 'px' } : undefined" role="grid">
+      <div class="scroll-container" :style="scrollHeight ? { height: scrollHeight + 'px', overflow: 'auto' } : undefined">
+      <table class="table" :class="[variant, { headline, 'has-scroll': !!scrollHeight }]" :style="width ? { width: width + 'px' } : undefined" role="grid">
         <colgroup>
           <col v-if="checkable" style="width: 28px" />
           <col v-for="column in visibleColumns" :key="column.key" :style="{ width: column.width ? column.width + 'px' : undefined }" />
@@ -596,6 +604,7 @@ defineExpose({
           </template>
         </tbody>
       </table>
+      </div>
 
       <div v-if="showPager" class="pager">
         <button type="button" :disabled="paging.currentPage.value <= 1" @click="goToPage(paging.currentPage.value - 1)">Prev</button>
