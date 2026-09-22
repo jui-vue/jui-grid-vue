@@ -510,7 +510,7 @@ defineExpose({
     </div>
 
     <template v-else>
-      <div class="scroll-container" :style="scrollHeight ? { height: scrollHeight + 'px', overflow: 'auto' } : undefined">
+      <div class="scroll-container" :style="scrollHeight ? { maxHeight: scrollHeight + 'px', overflow: 'auto' } : undefined">
       <table class="table" :class="[variant, { headline, 'has-scroll': !!scrollHeight }]" :style="width ? { width: width + 'px' } : undefined" role="grid">
         <colgroup>
           <col v-if="checkable" style="width: 28px" />
