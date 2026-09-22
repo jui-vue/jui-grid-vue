@@ -40,8 +40,14 @@ export function useColumnResize(getColumnWidth: (key: string) => number, setColu
     startX = e.pageX
     col = column
     nextCol = nextColumn
-    colStartWidth = getColumnWidth(column.key)
-    nextColStartWidth = getColumnWidth(nextColumn.key)
+
+    // column.width defaults to a placeholder (getColumnWidth's ?? 120) until a resize sets it
+    // explicitly, but the <th> itself may already be rendering much wider via auto layout - so
+    // always start from what's actually on screen, not the possibly-stale tracked width.
+    const th = (e.currentTarget as HTMLElement | null)?.closest('th')
+    const nextTh = th?.nextElementSibling as HTMLElement | null
+    colStartWidth = th ? th.getBoundingClientRect().width : getColumnWidth(column.key)
+    nextColStartWidth = nextTh ? nextTh.getBoundingClientRect().width : getColumnWidth(nextColumn.key)
 
     window.addEventListener('mousemove', onMouseMove)
     window.addEventListener('mouseup', onMouseUp)
