@@ -27,11 +27,22 @@ export function useColumnResize(getColumnWidth: (key: string) => number, setColu
     setColumnWidth(nextCol.key, newNextWidth)
   }
 
+  // The mousedown+mouseup pair on the resize handle (or wherever the drag ends, e.g. back over
+  // the <th> itself) makes the browser synthesize a "click" right after - which would otherwise
+  // bubble into the header's own @click and fire a sort. Swallow exactly that one click.
+  function suppressNextClick(e: MouseEvent) {
+    e.stopPropagation()
+    e.preventDefault()
+  }
+
   function onMouseUp() {
     window.removeEventListener('mousemove', onMouseMove)
     window.removeEventListener('mouseup', onMouseUp)
 
-    if (col) onResizeEnd?.(col)
+    if (col) {
+      onResizeEnd?.(col)
+      window.addEventListener('click', suppressNextClick, { capture: true, once: true })
+    }
     col = null
     nextCol = null
   }
@@ -57,6 +68,7 @@ export function useColumnResize(getColumnWidth: (key: string) => number, setColu
   onBeforeUnmount(() => {
     window.removeEventListener('mousemove', onMouseMove)
     window.removeEventListener('mouseup', onMouseUp)
+    window.removeEventListener('click', suppressNextClick, { capture: true })
   })
 
   return { onResizeStart }
