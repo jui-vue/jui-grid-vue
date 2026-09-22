@@ -38,14 +38,15 @@ function onRowEdit(row: GridRow, data: Record<string, any>) {
   }
 }
 
-function onRowMove(fromId: GridRow['id'], toId: GridRow['id']) {
+function onRowMove(fromId: GridRow['id'], beforeId: GridRow['id'] | undefined) {
   const fromIndex = rows.findIndex((r) => r.id === fromId)
-  const toIndex = rows.findIndex((r) => r.id === toId)
-  if (fromIndex === -1 || toIndex === -1) return
+  if (fromIndex === -1) return
 
   const [moved] = rows.splice(fromIndex, 1)
-  rows.splice(toIndex, 0, moved)
-  addLog(`row-move: ${fromId} -> ${toId}`)
+  const toIndex = beforeId == null ? -1 : rows.findIndex((r) => r.id === beforeId)
+  if (toIndex === -1) rows.push(moved)
+  else rows.splice(toIndex, 0, moved)
+  addLog(`row-move: ${fromId} -> before ${beforeId ?? '(end)'}`)
 }
 </script>
 

@@ -78,7 +78,7 @@ const emit = defineEmits<{
   'update:checked': [ids: RowId[]]
   'column-resize': [column: GridColumn]
   'update:columns': [columns: GridColumn[]]
-  'row-move': [fromId: RowId, toId: RowId]
+  'row-move': [fromId: RowId, beforeId: RowId | undefined]
   'row-edit': [row: GridRow, data: Record<string, any>]
   'edit-start': [row: GridRow]
   expand: [row: GridRow]
@@ -178,7 +178,10 @@ function activeIndex(): RowId | null {
   return expandedId.value ?? selectedId.value ?? editingId.value ?? null
 }
 
-const { dragOverId, onDragStart, onDragOver, onDragLeave, onDrop, onDragEnd } = useRowDrag((fromId, toId) => emit('row-move', fromId, toId))
+const { dragId, dragOverIndex, onRowMouseDown, onRowMouseOver, onRowMouseUp, onTheadMouseOver } = useRowDrag(
+  () => flatRows.value.map((f) => f.row.id),
+  (fromId, beforeId) => emit('row-move', fromId, beforeId),
+)
 
 const { isLoading: isSorting, showLoading: showSortLoading, hideLoading: hideSortLoading } = useLoading()
 
@@ -310,7 +313,7 @@ function rowClasses(flat: { row: GridRow }) {
   return {
     selected: props.selectable && isSelected(flat.row.id),
     checked: props.checkable && isChecked(flat.row.id),
-    dragtarget: props.draggable && dragOverId.value === flat.row.id,
+    dragtarget: props.draggable && dragId.value === flat.row.id,
     open: props.expandable && isExpanded(flat.row.id),
   }
 }
@@ -385,7 +388,7 @@ defineExpose({
         <col v-if="draggable && dragHandle" style="width: 28px" />
         <col v-for="column in visibleColumns" :key="column.key" :style="{ width: column.width ? column.width + 'px' : undefined }" />
       </colgroup>
-      <thead ref="theadRef">
+      <thead ref="theadRef" @mouseover="draggable && onTheadMouseOver()">
         <tr v-for="(headerRow, rowIndex) in headerRows" :key="rowIndex" role="row">
           <template v-if="rowIndex === 0">
             <th v-if="checkable" class="col-check" role="columnheader" :rowspan="headerRows.length"></th>
@@ -416,28 +419,26 @@ defineExpose({
           </th>
         </tr>
       </thead>
-      <tbody>
+      <tbody :style="draggable ? { userSelect: 'none' } : undefined">
         <tr v-if="flatRows.length === 0" role="row">
           <td class="none" role="gridcell" style="text-align: center;" :colspan="totalColumnCount">
             <slot name="empty">Data does not exist.</slot>
           </td>
         </tr>
-        <template v-for="flat in flatRows" :key="flat.row.id">
+        <template v-for="(flat, rowIndex) in flatRows" :key="flat.row.id">
+          <tr v-if="draggable && dragOverIndex === rowIndex" class="dragline"><td :colspan="totalColumnCount"></td></tr>
           <tr
             role="row"
             :class="rowClasses(flat)"
-            :draggable="draggable"
             :tabindex="selectable || checkable ? 0 : undefined"
             :aria-selected="selectable ? isSelected(flat.row.id) : undefined"
             @click="onRowClick(flat.row, $event)"
             @keydown="onRowKeydown($event, flat.row)"
             @dblclick="onRowDblClick(flat.row, $event)"
             @contextmenu.prevent="onRowContextMenu(flat.row, $event)"
-            @dragstart="draggable && onDragStart(flat.row.id)"
-            @dragover.prevent="draggable && onDragOver(flat.row.id)"
-            @dragleave="draggable && onDragLeave(flat.row.id)"
-            @drop="draggable && onDrop(flat.row.id)"
-            @dragend="draggable && onDragEnd()"
+            @mousedown="draggable && onRowMouseDown(flat.row.id, rowIndex, $event)"
+            @mouseover="draggable && onRowMouseOver(rowIndex)"
+            @mouseup="draggable && onRowMouseUp(rowIndex)"
           >
             <td v-if="checkable" class="col-check" role="gridcell" @click.stop>
               <input type="checkbox" :checked="isChecked(flat.row.id)" @change="onToggleCheck(flat.row.id)" />
@@ -481,6 +482,7 @@ defineExpose({
             </td>
           </tr>
         </template>
+        <tr v-if="draggable && dragOverIndex === flatRows.length" class="dragline"><td :colspan="totalColumnCount"></td></tr>
       </tbody>
     </table>
     </div>
