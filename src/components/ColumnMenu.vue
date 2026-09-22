@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue'
 import { Dropdown } from 'jui-ui-vue'
 import type { GridColumn } from '../types'
 
@@ -15,7 +15,7 @@ const open = ref(false)
 const toggleBtn = useTemplateRef<HTMLButtonElement>('toggleBtn')
 const dropdown = useTemplateRef<InstanceType<typeof Dropdown>>('dropdown')
 
-function onToggleClick() {
+async function onToggleClick() {
   if (open.value) {
     dropdown.value?.hide()
     return
@@ -23,7 +23,19 @@ function onToggleClick() {
 
   const btn = toggleBtn.value
   if (!btn) return
-  dropdown.value?.show(btn.offsetLeft, btn.offsetTop + btn.offsetHeight + 4)
+  const top = btn.offsetTop + btn.offsetHeight + 4
+  // 먼저 버튼의 왼쪽 끝에 맞춰 연다 - 실제 렌더된 패널 폭은 열어보기 전엔 모른다(라벨 길이에 따라
+  // 늘어날 수 있어 CSS min-width로는 못 미리 안다).
+  dropdown.value?.show(btn.offsetLeft, top)
+  await nextTick()
+  // 이 토글 버튼은 테이블 오른쪽 끝(top:4px;right:4px)에 있어서, 패널을 왼쪽 정렬로 그대로 두면
+  // 테이블/iframe 뷰포트 밖으로 튀어나가 완전히 안 보이게 된다(실제로 겪은 버그) - 버튼의 오른쪽
+  // 끝에 패널의 오른쪽 끝을 맞춰서 항상 컨테이너 안쪽으로 펼쳐지게 한다.
+  const panelEl = btn.parentElement?.querySelector<HTMLElement>('.column-menu-panel')
+  if (panelEl) {
+    const left = btn.offsetLeft + btn.offsetWidth - panelEl.offsetWidth
+    dropdown.value?.move(left, top)
+  }
 }
 
 // jui-ui-vue's Dropdown closes on an outside click by itself (process-wide listener shared by
@@ -85,9 +97,16 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
 
 .column-menu-panel {
   min-width: 140px;
+  color: #000;
+}
+
+/* Dropdown의 <ul>은 position:absolute라 .column-menu-panel 자신의 높이에 기여하지 않는다 -
+   max-height/overflow는(많은 컬럼일 때 스크롤 필요) 래퍼가 아니라 실제 콘텐츠인 ul 자체에
+   줘야 한다. 래퍼에 두면 0 높이 기준으로 overflow:auto가 전부 잘라버려서(실제로 겪은 버그 -
+   "⋮" 버튼을 눌러도 패널이 완전히 안 보였다) 메뉴 자체가 보이지 않게 된다. */
+.column-menu-panel :deep(ul) {
   max-height: 240px;
   overflow-y: auto;
-  color: #000;
 }
 
 .column-menu-item {
