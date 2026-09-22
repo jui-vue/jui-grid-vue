@@ -6,10 +6,18 @@ table.table {
   border: 0;
   width: 100%;
 
-  &.body-scroll {
-    > tbody {
-      display: block;
-      overflow: auto;
+  // 예전에는 tbody에 display:block+overflow:auto를 줘서 헤더 스크롤을 흉내냈다(.body-scroll).
+  // 이 방식은 tbody가 <table>의 일부에서 빠져나가 브라우저가 익명 테이블을 새로 만들어
+  // 컬럼 폭을 auto-layout으로 재계산하게 되고(서브픽셀 반올림이 원본과 안 맞아 끝없이
+  // 미세조정해야 했다), position:sticky 쪽이 진짜 테이블 레이아웃을 유지하면서 같은 시각
+  // 효과(세로 스크롤 시 헤더 고정, 가로 스크롤 시 헤더도 컬럼과 같이 이동)를 낸다 - DataGrid.vue/
+  // VirtualGrid.vue의 :scroll-height 구현과 동일한 방식. 부모를 overflow:auto;max-height:Npx로
+  // 감싸고 이 클래스만 주면 된다(콜그룹 기반 표 그대로 유지).
+  &.has-scroll {
+    > thead > tr > th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
     }
   }
 

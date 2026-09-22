@@ -621,11 +621,7 @@ th {
   position: relative;
 }
 
-.table.has-scroll thead th {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-}
+/* .table.has-scroll thead th의 position:sticky는 table.less(전역)로 옮겼다. */
 
 th.sortable {
   cursor: pointer;

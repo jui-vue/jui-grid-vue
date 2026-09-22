@@ -500,11 +500,8 @@ th {
   position: relative;
 }
 
-.table.has-scroll thead th {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-}
+/* .table.has-scroll thead th의 position:sticky는 table.less(전역)로 옮겼다 - Pattern-A로
+   손으로 짠 <table>(예: table_4/table_12)도 컴포넌트 없이 같은 클래스만으로 재사용할 수 있게. */
 
 th.sortable {
   cursor: pointer;
