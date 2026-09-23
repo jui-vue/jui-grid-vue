@@ -451,24 +451,33 @@ defineExpose({
               :style="{ textAlign: column.align }"
               @dblclick="onCellDblClick(flat.row, column)"
             >
-              <input
+              <slot
                 v-if="isEditing(flat.row.id) && isEditableColumn(column)"
-                class="edit"
-                v-model="draft[column.key]"
-                @keyup.enter="commitEdit(flat.row)"
-                @blur="commitEdit(flat.row)"
-                @click.stop
-              />
+                :name="`edit-${column.key}`"
+                :row="flat.row"
+                :draft="draft"
+                :column="column"
+                :commit="() => commitEdit(flat.row)"
+                :cancel="cancelEdit"
+              >
+                <input
+                  class="edit"
+                  v-model="draft[column.key]"
+                  @keyup.enter="commitEdit(flat.row)"
+                  @blur="commitEdit(flat.row)"
+                  @click.stop
+                />
+              </slot>
               <template v-else>
+                <span v-if="colIndex === 0 && flat.depth > 0" class="tree-indent" :style="{ width: flat.depth * 20 + 'px' }"></span>
                 <button
                   v-if="colIndex === 0 && flat.hasChildren"
                   type="button"
                   class="tree-toggle"
-                  :style="{ marginLeft: flat.depth * 16 + 'px' }"
                   :aria-expanded="flat.expanded"
                   :aria-label="flat.expanded ? 'Collapse row' : 'Expand row'"
                   @click.stop="toggleTree(flat.row.id)"
-                  >{{ flat.expanded ? '▾' : '▸' }}</button
+                  ><slot name="tree-toggle" :row="flat.row" :expanded="flat.expanded">{{ flat.expanded ? '-' : '+' }}</slot></button
                 >
                 <slot :name="`cell-${column.key}`" :row="flat.row" :value="flat.row.data[column.key]" :column="column">{{
                   flat.row.data[column.key]
@@ -527,7 +536,7 @@ th.sortable {
 
 .tree-toggle {
   display: inline-block;
-  width: 14px;
+  min-width: 10px;
   cursor: pointer;
   user-select: none;
   border: none;
@@ -537,6 +546,13 @@ th.sortable {
   line-height: 1;
   vertical-align: middle;
   color: inherit;
+  text-align: center;
+}
+
+.tree-indent {
+  position: relative;
+  display: inline-block;
+  vertical-align: middle;
 }
 
 tbody tr[tabindex]:focus-visible,

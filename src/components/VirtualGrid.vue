@@ -404,7 +404,7 @@ defineExpose({
       v-if="mode === 'virtual'"
       :ref="(el: any) => (containerRef = el)"
       class="scroll-container"
-      :style="{ height: height + 'px', overflow: 'auto' }"
+      :style="{ maxHeight: height + 'px', overflow: 'auto' }"
       @scroll="onScroll"
     >
       <table class="table has-scroll" :class="[variant, { headline }]" :style="width ? { width: width + 'px' } : undefined" role="grid">
@@ -471,24 +471,33 @@ defineExpose({
                 :style="{ textAlign: column.align }"
                 @dblclick="onCellDblClick(flat.row, column)"
               >
-                <input
+                <slot
                   v-if="isEditing(flat.row.id) && isEditableColumn(column)"
-                  class="edit"
-                  v-model="draft[column.key]"
-                  @keyup.enter="commitEdit(flat.row)"
-                  @blur="commitEdit(flat.row)"
-                  @click.stop
-                />
+                  :name="`edit-${column.key}`"
+                  :row="flat.row"
+                  :draft="draft"
+                  :column="column"
+                  :commit="() => commitEdit(flat.row)"
+                  :cancel="cancelEdit"
+                >
+                  <input
+                    class="edit"
+                    v-model="draft[column.key]"
+                    @keyup.enter="commitEdit(flat.row)"
+                    @blur="commitEdit(flat.row)"
+                    @click.stop
+                  />
+                </slot>
                 <template v-else>
+                  <span v-if="colIndex === 0 && flat.depth > 0" class="tree-indent" :style="{ width: flat.depth * 20 + 'px' }"></span>
                   <button
                     v-if="colIndex === 0 && flat.hasChildren"
                     type="button"
                     class="tree-toggle"
-                    :style="{ marginLeft: flat.depth * 16 + 'px' }"
                     :aria-expanded="flat.expanded"
                     :aria-label="flat.expanded ? 'Collapse row' : 'Expand row'"
                     @click.stop="toggleTree(flat.row.id)"
-                    >{{ flat.expanded ? '▾' : '▸' }}</button
+                    ><slot name="tree-toggle" :row="flat.row" :expanded="flat.expanded">{{ flat.expanded ? '-' : '+' }}</slot></button
                   >
                   <slot :name="`cell-${column.key}`" :row="flat.row" :value="flat.row.data[column.key]" :column="column">{{
                     flat.row.data[column.key]
@@ -571,24 +580,33 @@ defineExpose({
                 :style="{ textAlign: column.align }"
                 @dblclick="onCellDblClick(flat.row, column)"
               >
-                <input
+                <slot
                   v-if="isEditing(flat.row.id) && isEditableColumn(column)"
-                  class="edit"
-                  v-model="draft[column.key]"
-                  @keyup.enter="commitEdit(flat.row)"
-                  @blur="commitEdit(flat.row)"
-                  @click.stop
-                />
+                  :name="`edit-${column.key}`"
+                  :row="flat.row"
+                  :draft="draft"
+                  :column="column"
+                  :commit="() => commitEdit(flat.row)"
+                  :cancel="cancelEdit"
+                >
+                  <input
+                    class="edit"
+                    v-model="draft[column.key]"
+                    @keyup.enter="commitEdit(flat.row)"
+                    @blur="commitEdit(flat.row)"
+                    @click.stop
+                  />
+                </slot>
                 <template v-else>
+                  <span v-if="colIndex === 0 && flat.depth > 0" class="tree-indent" :style="{ width: flat.depth * 20 + 'px' }"></span>
                   <button
                     v-if="colIndex === 0 && flat.hasChildren"
                     type="button"
                     class="tree-toggle"
-                    :style="{ marginLeft: flat.depth * 16 + 'px' }"
                     :aria-expanded="flat.expanded"
                     :aria-label="flat.expanded ? 'Collapse row' : 'Expand row'"
                     @click.stop="toggleTree(flat.row.id)"
-                    >{{ flat.expanded ? '▾' : '▸' }}</button
+                    ><slot name="tree-toggle" :row="flat.row" :expanded="flat.expanded">{{ flat.expanded ? '-' : '+' }}</slot></button
                   >
                   <slot :name="`cell-${column.key}`" :row="flat.row" :value="flat.row.data[column.key]" :column="column">{{
                     flat.row.data[column.key]
@@ -654,7 +672,7 @@ th.sortable {
 
 .tree-toggle {
   display: inline-block;
-  width: 14px;
+  min-width: 10px;
   cursor: pointer;
   user-select: none;
   border: none;
@@ -664,6 +682,21 @@ th.sortable {
   line-height: 1;
   vertical-align: middle;
   color: inherit;
+  text-align: center;
+}
+
+/* 이름 텍스트 앞에 항상 나오는 건 "depth * 20px 들여쓰기" 하나뿐이다 - 버튼(+/-)은 폭을
+   고정하지 않고 글자 하나 크기 그대로 흘러가게 둔다("min-width: 10px"는 클릭 영역만 확보).
+   버튼 유무에 따라 이름 시작 위치가 몇 px 갈리는 건 원본도 마찬가지다(리프 "Alvin1"과
+   부모 "Alvin2"의 이름 시작 위치가 정확히 일치하지 않는다) - 다만 원본은 그 폭이 문자 하나
+   정도로 작아서 눈에 거슬리지 않는다. 이전엔 버튼 폭을 14px 고정해뒀는데 들여쓰기 한 칸
+   (16px)에 맞먹는 크기라 자식→리프로 내려가는 단계가 유독 안 벌어져 보였다. 그렇다고
+   모든 행에 버튼 자리를 무조건 예약해버리면(예: depth와 무관하게 항상 +1칸) 이번엔 자식이
+   없는 최상위 형제 행(Alvin1, Alvin3...)까지 없는 버튼 자리만큼 밀려나 보여서 더 이상하다 -
+   그래서 버튼은 그냥 원본처럼 인라인으로 흘러가게만 둔다. */
+.tree-indent {
+  display: inline-block;
+  vertical-align: middle;
 }
 
 .col-check {
