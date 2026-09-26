@@ -146,7 +146,7 @@ Every behavior is implemented as an independent, unit-tested composable under `s
 
 ## Theming
 
-Two built-in themes (`theme="classic"` / `theme="dark"`), ported from jui-grid's LESS variables and compiled once per theme so switching is a runtime class swap, no separate stylesheet load. Structural layout rules live in `src/styles/table.less`; colors live in `src/styles/table.theme.less` and `src/styles/theme/{classic,dark}.less`.
+Three built-in themes (`theme="classic"` / `theme="dark"` / `theme="jennifer"`), ported from jui-grid's LESS variables and compiled once per theme so switching is a runtime class swap, no separate stylesheet load. Structural layout rules live in `src/styles/table.less`; colors live in `src/styles/table.theme.less` and `src/styles/theme/{classic,dark,jennifer}.less`.
 
 ## What's intentionally different from the original jui-grid
 

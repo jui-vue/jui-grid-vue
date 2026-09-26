@@ -41,7 +41,7 @@ const props = withDefaults(
     expandable?: boolean
     editable?: boolean
     columnMenu?: boolean
-    theme?: 'classic' | 'dark'
+    theme?: 'classic' | 'dark' | 'jennifer'
     /** table.less/table.theme.less variant class (jui-grid's own table style options). */
     variant?: 'classic' | 'simple' | 'expand'
     /** `.headline` modifier for the `simple` variant - a border between header cells. */
